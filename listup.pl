@@ -10,8 +10,11 @@ my $filename = "list.tsv";
 my $fh;
 my $q  = new CGI;
 
-print $q->header;
+print $q->header(-charset=>'utf-8');
 print $q->start_html(-title=>"listup method");
+
+print $q->h1("今日のリスト");
+print "\n";
 
 if( -f $filename){
 		open $fh,"<",$filename or die "file open failed!\n";
