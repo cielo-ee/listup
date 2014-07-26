@@ -15,8 +15,10 @@ print $q->start_html;
 
 if( -f $filename){
 		open $fh,"<",$filename or die "file open failed!\n";
+		print "file \"$filename\"is found\n";
 }
 else{
+		print "file \"$filename\"is not found\n";
 		exit;
 }
 
