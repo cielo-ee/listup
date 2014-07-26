@@ -11,7 +11,7 @@ my $fh;
 my $q  = new CGI;
 
 print $q->header;
-print $q->start_html;
+print $q->start_html(-title=>"listup method");
 
 if( -f $filename){
 		open $fh,"<",$filename or die "file open failed!\n";
