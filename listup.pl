@@ -25,12 +25,22 @@ else{
 		exit;
 }
 
+print "<table border =\"1\">";
+
 
 while (my $line = <$fh>){
+		print "<tr>";
 		chomp $line;
 		my @items = split(/\t/,$line);
-		print join("\t",@items);
-		print "\n";
+		my ($consecutive,$priority,$add_date,$limit_date,$detail) = @items;
+		print "<td>$consecutive</td>";
+		print "<td>$priority</td>";
+		print "<td>$add_date</td>";
+		print "<td>$limit_date</td>";
+		print "<td>$detail</td>";
+		print "</tr>\n";
 }
+
+print "</table>";
 
 print $q->end_html;
