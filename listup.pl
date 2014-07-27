@@ -11,9 +11,11 @@ use Data::Dumper;
 
 my $filename = "list.tsv";
 
+my $itemnofile = "itemno.dat"; #通し番号
 
 my $fh;
 my $q  = new CGI;
+
 
 #ファイルが存在しない場合、自動で作る
 if( !(-f $filename)){
@@ -42,16 +44,14 @@ my @entries = &loadList($filename);
 
 #追加/更新
 if( $q->param('item')){
-		my $lastno = 1;
+#		my $lastno = 1;
 		my ($second, $minute, $hour, $mday, $month, $year) = localtime;
 		$month += 1;
 		$year  += 1900;
 		my $today = sprintf("%04d%02d%02d",$year,$month,$mday);
 		my %entry = (
-				itemno      => $lastno,
 				prior       => $q->param('priority'),
 				item        => $q->param('item'),
-#				add_date    => $add_date,
 				modify_date => $today,
 				limit_date  => $q->param('limit_date'),
 				detail      => $q->param('detail')
@@ -59,10 +59,12 @@ if( $q->param('item')){
 #		print Dumper %entry;
 		if( $q->param('modifyitem')){ #更新
 				$entry{'add_date'} = $entries[$q->param('modifyitem')-1]->{add_date};
+				$entry{'itemno'}   = $entries[$q->param('modifyitem')-1]->{itemno};
 				splice(@entries,$q->param('modifyitem')-1,1,\%entry);
 		}
 		else{                         #追加
 				$entry{'add_date'} = $today;
+				$entry{'itemno'} = &updateItemNo($itemnofile);
 				push @entries,\%entry;
 		}
 
@@ -194,4 +196,33 @@ sub saveList
 		File::Copy::move($tmpfile, $filename) or die "Cannot move $tmpfile to $filename";
 		
 
+}
+
+sub updateItemNo
+{
+		my $filename = shift;
+		my $tmpfile  = "tmp_item$$";
+
+		my $count = 1;
+
+		my $fh;
+		
+		if( !(-f $filename)){
+				open $fh ,">", $filename or die "Cannnot open $filename: $!";
+				print $fh $count;
+				close $fh or die "Error closing $filename:$!";
+		}
+		
+		open $fh,"<",$filename or die "Cannnot open $filename: $!";
+		my $count = <$fh>;
+		close $fh or die "Error closing $filename:$!";
+		my $newcount = $count + 1;
+			
+		open $fh,">",$tmpfile or die "Cannot open tmpfile:$!";
+		print $fh $newcount;
+		close $fh or die "Error closing $tmpfile:$!";
+		
+		File::Copy::move($tmpfile, $filename) or die "Cannot move $tmpfile to $filename";
+
+		return $count;
 }
