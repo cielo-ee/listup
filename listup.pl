@@ -14,7 +14,7 @@ my $fh;
 my $q  = new CGI;
 
 #ファイルが存在しない場合、自動で作る
-if( -f $filename){
+if( !(-f $filename)){
 		open  $fh,">",$filename or die "Cannot open $filename:$!";
 		close $fh or die "Cannot close $filename:$!";
 }
@@ -70,6 +70,8 @@ while (my $line = <$fh>){
 
 		$lastno = $consecutive + 1;
 }
+
+
 print "</table>";
 close $fh or die "Error closing $filename:$!";
 
@@ -106,14 +108,16 @@ sub updateList
 		my $tmpfile  = "tmp$$";
 
 		#ファイルの内容を一旦コピー
-		File::Copy::move($filename,$tmpfile) or die "Cannot move $tmpfile to $filename:$!";
+		File::Copy::copy($filename,$tmpfile) or die "Cannot copy $tmpfile to $filename:$!";
 
 		my $lastno = 1;
 		
 		#登録内容を書き込む
 		open(my $tmpfh, ">>", $tmpfile) or die "Cannot open $tmpfile: $!";
 		my $date = sprintf "$year$month$mday";
-		my $line = join("\t",("\n",$lastno,$q->param('priority'), $q->param('item'),$q->param('limit_date'),$q->param('detail')));
+		my $line = join("\t",($lastno,$q->param('priority'), $q->param('item'),$q->param('limit_date'),$q->param('detail')));
+		print $line;
+		print $tmpfh "\n" or die "Error Writing $tmpfile: $!";
 		print $tmpfh $line or die "Error Writing $tmpfile: $!";
 		close $tmpfh or die "Error closing $tmpfile:$!";
 
