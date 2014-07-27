@@ -7,6 +7,8 @@ use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use File::Copy;
 
+use Data::Dumper;
+
 my $filename = "list.tsv";
 
 
@@ -36,26 +38,34 @@ print "今日は$year年$month月$mday日<br>";
 print "</p>";
 
 
+my @entries = &loadList($filename);
 
-
-#追加
+#追加/更新
 if( $q->param('item')){
-		print "以下の内容を追加しました：";
-		print $q->param('state');
-		print "優先度"; 
-		print $q->param('priority');
-		print "項目";
-		print $q->param('item');
-		print "登録日";
-		print "期限";
-		print $q->param('limit_date');
-		print "詳細";
-		print $q->param('detail');
-		print "<br />";
-		&updateList($filename,$q);
+		my $lastno = 1;
+		my ($second, $minute, $hour, $mday, $month, $year) = localtime;
+		$month += 1;
+		$year  += 1900;
+		my $date = sprintf("%04d%02d%02d",$year,$month,$mday);
+		my %entry = (
+				itemno     => $lastno,
+				prior      => $q->param('priority'),
+				item        => $q->param('item'),
+				add_date   => $date,
+				limit_date => $q->param('limit_date'),
+				detail     => $q->param('detail')
+				);
+#		print Dumper %entry;
+		if( $q->param('modifyitem')){ #更新
+				splice(@entries,$q->param('modifyitem')-1,1,\%entry);
+		}
+		else{                          #追加
+				push @entries,\%entry;
+		}
+
+		saveList($filename,@entries);
 }
 
-my @entries = &loadList($filename);
 
 #削除
 my @deleteItems = $q->param('deleteitem');
@@ -122,35 +132,6 @@ EOF
 
 print $q->end_html;
 
-sub updateList
-{
-		my ($filename, $q) = @_;
-		
-		#書き出し用テンプファイル
-		my $tmpfile  = "tmp$$";
-
-		#ファイルの内容を一旦コピー
-		File::Copy::copy($filename,$tmpfile) or die "Cannot copy $tmpfile to $filename:$!";
-
-		my $lastno = 1;
-		my ($second, $minute, $hour, $mday, $month, $year) = localtime;
-		$month += 1;
-		$year  += 1900;
-		my $date = sprintf("%04d%02d%02d",$year,$month,$mday);
-#		print $date;
-		
-		#登録内容を書き込む
-		open(my $tmpfh, ">>", $tmpfile) or die "Cannot open $tmpfile: $!";
-		my $line = join("\t",($lastno,$q->param('priority'),$q->param('item'),$date,$q->param('limit_date'),$q->param('detail')));
-#		print $line;
-		print $tmpfh "\n" or die "Error Writing $tmpfile: $!";
-		print $tmpfh $line or die "Error Writing $tmpfile: $!";
-		close $tmpfh or die "Error closing $tmpfile:$!";
-
-		#ファイルの内容を書き戻す
-		File::Copy::move($tmpfile, $filename) or die "Cannot move $tmpfile to $filename";
-}
-
 sub loadList
 {
 		my $filename = shift;
@@ -187,6 +168,10 @@ sub saveList
 		
 		open $fh, ">", $tmpfile or die "Cannot open $tmpfile: $!";
 
+		#print "<pre>";
+		#print Dumper @entries;
+		#print "</pre>";
+		
 		foreach my $entry(@entries){
 				my $line = join("\t",($entry->{itemno},
 									  $entry->{prior},
