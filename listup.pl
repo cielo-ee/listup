@@ -35,7 +35,7 @@ print "</p>";
 if( $q->param('state')){
 		print "更新：";
 		print $q->param('state');
-		print "優先度";
+		print "優先度"; 
 		print $q->param('priority');
 		print "項目";
 		print $q->param('item');
@@ -55,20 +55,35 @@ open $fh,"<",$filename or die "Cannot open $filename:$!";
 print "<table border =\"1\">";
 
 my $lastno = 0;
-while (my $line = <$fh>){
+my @lines = <$fh>;
+
+my @entries =();
+
+foreach my $line(@lines){
+		chomp($line);
+		my @data  = split('\t',$line);
+		push(@entries,{
+				itemno     => $data[0],
+				prior      => $data[1],
+				item       => $data[2],
+				add_date   => $data[3],
+				limit_date => $data[4],
+				detail     => $data[5]
+			});
+}
+
+foreach my $entry(@entries){
 		#中身を表示
 		print "<tr>";
-		chomp $line;
-		my @items = split(/\t/,$line);
-		my ($consecutive,$priority,$add_date,$limit_date,$detail) = @items;
-		print "<td>$consecutive</td>";
-		print "<td>$priority</td>";
-		print "<td>$add_date</td>";
-		print "<td>$limit_date</td>";
-		print "<td>$detail</td>";
+		print "<td>$entry->{itemno}</td>";
+		print "<td>$entry->{prior}</td>";
+		print "<td>$entry->{item}</td>";
+		print "<td>$entry->{add_date}</td>";
+		print "<td>$entry->{limit_date}</td>";
+		print "<td>$entry->{detail}</td>";
 		print "</tr>\n";
 
-		$lastno = $consecutive + 1;
+#		$lastno = $entry->itemno + 1;
 }
 
 
@@ -111,12 +126,16 @@ sub updateList
 		File::Copy::copy($filename,$tmpfile) or die "Cannot copy $tmpfile to $filename:$!";
 
 		my $lastno = 1;
+		my ($second, $minute, $hour, $mday, $month, $year) = localtime;
+		$month += 1;
+		$year  += 1900;
+		my $date = sprintf("%04d%02d%02d",$year,$month,$mday);
+		print $date;
 		
 		#登録内容を書き込む
 		open(my $tmpfh, ">>", $tmpfile) or die "Cannot open $tmpfile: $!";
-		my $date = sprintf "$year$month$mday";
-		my $line = join("\t",($lastno,$q->param('priority'), $q->param('item'),$q->param('limit_date'),$q->param('detail')));
-		print $line;
+		my $line = join("\t",($lastno,$q->param('priority'),$q->param('item'),$date,$q->param('limit_date'),$q->param('detail')));
+#		print $line;
 		print $tmpfh "\n" or die "Error Writing $tmpfile: $!";
 		print $tmpfh $line or die "Error Writing $tmpfile: $!";
 		close $tmpfh or die "Error closing $tmpfile:$!";
