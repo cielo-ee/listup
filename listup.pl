@@ -8,10 +8,16 @@ use CGI::Carp qw(fatalsToBrowser);
 use File::Copy;
 
 my $filename = "list.tsv";
-my $tmpfile  = "tmp$$";
+
 
 my $fh;
 my $q  = new CGI;
+
+#ファイルが存在しない場合、自動で作る
+if( -f $filename){
+		open  $fh,">",$filename or die "Cannot open $filename:$!";
+		close $fh or die "Cannot close $filename:$!";
+}
 
 print $q->header(-charset=>'utf-8');
 print $q->start_html(-title=>"listup method");
@@ -39,20 +45,13 @@ if( $q->param('state')){
 		print "詳細";
 		print $q->param('detail');
 		print "<br />";
+		&updateList($filename,$q);
 }
 
-#書き出し用テンプファイル
-open(my $tmpfh, ">", $tmpfile) or die "Cannot open $tmpfile: $!";
 
-if( -f $filename){
-		open $fh,"<",$filename or die "Cannot open $filename:$!";
-		print "file \"$filename\"is found\n";
-}
-else{
-		print "file \"$filename\"is not found\n";
-		exit;
-}
 
+
+open $fh,"<",$filename or die "Cannot open $filename:$!";
 print "<table border =\"1\">";
 
 my $lastno = 0;
@@ -70,23 +69,12 @@ while (my $line = <$fh>){
 		print "</tr>\n";
 
 		$lastno = $consecutive + 1;
-		#テンプファイルに書き出し
-		$line = sprintf "$line\n";
-		print $tmpfh $line or die "Error Writing $tmpfile: $!";
 }
 print "</table>";
-close $fh or die "Error closing $filename";
+close $fh or die "Error closing $filename:$!";
 
 
-#登録内容を書き込む
-if($q->param('state')){
-		my $date = sprintf "$year$month$mday";
-		my $line = join("\t",('\n',$lastno,$q->param('priority'), $q->param('item'),$q->param('limit_date'),$q->param('detail')));
-		print $tmpfh $line or die "Error Writing $tmpfile: $!";
-}
 
-close $tmpfh or die "Error closing $tmpfile";
-File::Copy::move($tmpfile, $filename) or die "Cannot move $tmpfile to $filename";
 	 
 print <<'EOF';
 
@@ -110,3 +98,25 @@ EOF
 
 print $q->end_html;
 
+sub updateList
+{
+		my ($filename, $q) = @_;
+		
+		#書き出し用テンプファイル
+		my $tmpfile  = "tmp$$";
+
+		#ファイルの内容を一旦コピー
+		File::Copy::move($filename,$tmpfile) or die "Cannot move $tmpfile to $filename:$!";
+
+		my $lastno = 1;
+		
+		#登録内容を書き込む
+		open(my $tmpfh, ">", $tmpfile) or die "Cannot open $tmpfile: $!";
+		my $date = sprintf "$year$month$mday";
+		my $line = join("\t",("\n",$lastno,$q->param('priority'), $q->param('item'),$q->param('limit_date'),$q->param('detail')));
+		print $tmpfh $line or die "Error Writing $tmpfile: $!";
+		close $tmpfh or die "Error closing $tmpfile:$!";
+
+		#ファイルの内容を書き戻す
+		File::Copy::move($tmpfile, $filename) or die "Cannot move $tmpfile to $filename";
+}
