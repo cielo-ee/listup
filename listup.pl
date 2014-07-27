@@ -25,15 +25,18 @@ print $q->start_html(-title=>"listup method");
 print $q->h1("今日のリスト");
 print "\n";
 
+
 my ($second, $minute, $hour, $mday, $month, $year) = localtime;
 $month += 1;
 $year  += 1900;
+
+
 print "<p>";
 print "今日は$year年$month月$mday日<br>";
 print "</p>";
 
 if( $q->param('state')){
-		print "更新：";
+		print "以下の内容を追加しました：";
 		print $q->param('state');
 		print "優先度"; 
 		print $q->param('priority');
@@ -48,32 +51,22 @@ if( $q->param('state')){
 		&updateList($filename,$q);
 }
 
+my @entries = &loadList($filename);
 
 
+print <<'EOS';
+<form action="./listup.pl" method="post">
+<table border ="1">
+<tr bgcolor=" 	paleturquoise">
+<td>#</td><td>優先度</td><td>項目</td><td>登録日</td><td>期日</td><td>詳細</td><td>変更</td><td>削除</td>
+</tr>
 
-open $fh,"<",$filename or die "Cannot open $filename:$!";
-print "<table border =\"1\">";
+EOS
 
-my $lastno = 0;
-my @lines = <$fh>;
-
-my @entries =();
-
-foreach my $line(@lines){
-		chomp($line);
-		my @data  = split('\t',$line);
-		push(@entries,{
-				itemno     => $data[0],
-				prior      => $data[1],
-				item       => $data[2],
-				add_date   => $data[3],
-				limit_date => $data[4],
-				detail     => $data[5]
-			});
-}
-
+my $i = 0;
 foreach my $entry(@entries){
 		#中身を表示
+		$i++;
 		print "<tr>";
 		print "<td>$entry->{itemno}</td>";
 		print "<td>$entry->{prior}</td>";
@@ -81,6 +74,8 @@ foreach my $entry(@entries){
 		print "<td>$entry->{add_date}</td>";
 		print "<td>$entry->{limit_date}</td>";
 		print "<td>$entry->{detail}</td>";
+		print "<td><input type=\"radio\" name=\"modifyitem\" value=\"$i\"></td>"; #変更
+		print "<td><input type=\"checkbox\" name=\"deleteitem\" value=\"$i\"></td>";
 		print "</tr>\n";
 
 #		$lastno = $entry->itemno + 1;
@@ -88,14 +83,10 @@ foreach my $entry(@entries){
 
 
 print "</table>";
-close $fh or die "Error closing $filename:$!";
 
 
-
-	 
 print <<'EOF';
 
-<form action="./listup.pl" method="post">
 優先度：<select name="priority">
 <option value="A">A</option>
 <option value="B">B</option>
@@ -130,7 +121,7 @@ sub updateList
 		$month += 1;
 		$year  += 1900;
 		my $date = sprintf("%04d%02d%02d",$year,$month,$mday);
-		print $date;
+#		print $date;
 		
 		#登録内容を書き込む
 		open(my $tmpfh, ">>", $tmpfile) or die "Cannot open $tmpfile: $!";
@@ -142,4 +133,32 @@ sub updateList
 
 		#ファイルの内容を書き戻す
 		File::Copy::move($tmpfile, $filename) or die "Cannot move $tmpfile to $filename";
+}
+
+sub loadList
+{
+		my $filename = shift;
+		
+		open $fh,"<",$filename or die "Cannot open $filename:$!";
+
+		my @lines = <$fh>;
+
+		my @entries =();
+
+		foreach my $line(@lines){
+				chomp($line);
+				my @data  = split('\t',$line);
+				push(@entries,{
+						itemno     => $data[0],
+						prior      => $data[1],
+						item       => $data[2],
+						add_date   => $data[3],
+						limit_date => $data[4],
+						detail     => $data[5]
+					});
+		}
+		close $fh or die "Error closing $filename:$!";
+
+		return @entries;
+
 }
