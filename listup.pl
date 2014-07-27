@@ -76,7 +76,7 @@ print "</table>";
 #登録内容を書き込む
 if($q->param('state')){
 		my $date = sprintf "$year$month$mday";
-		my $line = join("\t",($lastno,q->param('priority'), $q->param('item'),$q->param('limit_date'),$q->param('detail')));
+		my $line = join("\t",($lastno,$q->param('priority'), $q->param('item'),$q->param('limit_date'),$q->param('detail')));
 		print $tmpfh $line or die "Error Writing $tmpfile: $!";
 }
 
