@@ -46,20 +46,23 @@ if( $q->param('item')){
 		my ($second, $minute, $hour, $mday, $month, $year) = localtime;
 		$month += 1;
 		$year  += 1900;
-		my $date = sprintf("%04d%02d%02d",$year,$month,$mday);
+		my $today = sprintf("%04d%02d%02d",$year,$month,$mday);
 		my %entry = (
-				itemno     => $lastno,
-				prior      => $q->param('priority'),
+				itemno      => $lastno,
+				prior       => $q->param('priority'),
 				item        => $q->param('item'),
-				add_date   => $date,
-				limit_date => $q->param('limit_date'),
-				detail     => $q->param('detail')
+#				add_date    => $add_date,
+				modify_date => $today,
+				limit_date  => $q->param('limit_date'),
+				detail      => $q->param('detail')
 				);
 #		print Dumper %entry;
 		if( $q->param('modifyitem')){ #更新
+				$entry{'add_date'} = $entries[$q->param('modifyitem')-1]->{add_date};
 				splice(@entries,$q->param('modifyitem')-1,1,\%entry);
 		}
-		else{                          #追加
+		else{                         #追加
+				$entry{'add_date'} = $today;
 				push @entries,\%entry;
 		}
 
@@ -75,8 +78,8 @@ if(@deleteItems){
 				splice(@entries,$index-1,1);
 		}
 		saveList($filename,@entries);
-		print join(",",@deleteItems);
-		print "を削除しました\n";
+#		print join(",",@deleteItems);
+#		print "を削除しました\n";
 }
 
 
@@ -84,7 +87,7 @@ print <<'EOS';
 <form action="./listup.pl" method="post">
 <table border ="1">
 <tr bgcolor=" 	paleturquoise">
-<td>#</td><td>優先度</td><td>項目</td><td>登録日</td><td>期日</td><td>詳細</td><td>変更</td><td>削除</td>
+<td>#</td><td>優先度</td><td>項目</td><td>登録日</td><td>更新日</td><td>期日</td><td>詳細</td><td>変更</td><td>削除</td>
 </tr>
 
 EOS
@@ -94,12 +97,13 @@ foreach my $entry(@entries){
 		#中身を表示
 		$i++;
 		print "<tr>";
-		print "<td>$entry->{itemno}</td>";
-		print "<td>$entry->{prior}</td>";
-		print "<td>$entry->{item}</td>";
-		print "<td>$entry->{add_date}</td>";
-		print "<td>$entry->{limit_date}</td>";
-		print "<td>$entry->{detail}</td>";
+		print "<td>".$q->escapeHTML($entry->{itemno})."</td>";
+		print "<td>".$q->escapeHTML($entry->{prior})."</td>";
+		print "<td>".$q->escapeHTML($entry->{item})."</td>";
+		print "<td>".$q->escapeHTML($entry->{add_date})."</td>";
+		print "<td>".$q->escapeHTML($entry->{modify_date})."</td>";
+		print "<td>".$q->escapeHTML($entry->{limit_date})."</td>";
+		print "<td>".$q->escapeHTML($entry->{detail})."</td>";
 		print "<td><input type=\"radio\" name=\"modifyitem\" value=\"$i\"></td>"; #変更
 		print "<td><input type=\"checkbox\" name=\"deleteitem\" value=\"$i\"></td>";
 		print "</tr>\n";
@@ -125,7 +129,6 @@ print <<'EOF';
 詳細：<input type="text" name="detail" size="40">
 <input type="submit" value="送信">
 <input type="reset" value="リセット">
-<input type="hidden" name="state" value=1>
 </form>
 
 EOF
@@ -146,12 +149,13 @@ sub loadList
 				chomp($line);
 				my @data  = split('\t',$line);
 				push(@entries,{
-						itemno     => $data[0],
-						prior      => $data[1],
-						item       => $data[2],
-						add_date   => $data[3],
-						limit_date => $data[4],
-						detail     => $data[5]
+						itemno      => $data[0],
+						prior       => $data[1],
+						item        => $data[2],
+						add_date    => $data[3],
+						modify_date => $data[4],
+						limit_date  => $data[5],
+						detail      => $data[6]
 					});
 		}
 		close $fh or die "Error closing $filename:$!";
@@ -177,6 +181,7 @@ sub saveList
 									  $entry->{prior},
 									  $entry->{item},
 									  $entry->{add_date},
+									  $entry->{modify_date},
 									  $entry->{limit_date},
 									  $entry->{detail})
 								);
