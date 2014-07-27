@@ -43,4 +43,22 @@ while (my $line = <$fh>){
 
 print "</table>";
 
+print <<'EOF';
+
+<form action="./listup.pl" method="post">
+優先度：<select name="priority">
+<option value="A">A</option>
+<option value="B">B</option>
+<option value="C">C</option>
+<option value="D">D</option>
+<option value="E">E</option>
+</select>
+期限：<input type="text" name="limit_date" size="40">
+詳細：<input type="text" name="detail" size="40">
+<input type="submit" value="送信">
+<input type="reset" value="リセット">
+</form>
+
+EOF
+
 print $q->end_html;
