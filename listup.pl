@@ -27,6 +27,8 @@ print "今日は$year年$month月$mday日<br>";
 print "</p>";
 
 if( $q->param('state')){
+		print "更新：";
+		print $q->param('state');
 		print "優先度";
 		print $q->param('priority');
 		print "項目";
@@ -43,7 +45,7 @@ if( $q->param('state')){
 open(my $tmpfh, ">", $tmpfile) or die "Cannot open $tmpfile: $!";
 
 if( -f $filename){
-		open $fh,"<",$filename or die "file open failed!\n";
+		open $fh,"<",$filename or die "Cannot open $filename:$!";
 		print "file \"$filename\"is found\n";
 }
 else{
@@ -72,11 +74,13 @@ while (my $line = <$fh>){
 		print $tmpfh $line or die "Error Writing $tmpfile: $!";
 }
 print "</table>";
+close $fh or die "Error closing $filename";
+
 
 #登録内容を書き込む
 if($q->param('state')){
 		my $date = sprintf "$year$month$mday";
-		my $line = join("\t",($lastno,$q->param('priority'), $q->param('item'),$q->param('limit_date'),$q->param('detail')));
+		my $line = join("\t",('\n',$lastno,$q->param('priority'), $q->param('item'),$q->param('limit_date'),$q->param('detail')));
 		print $tmpfh $line or die "Error Writing $tmpfile: $!";
 }
 
@@ -93,6 +97,7 @@ print <<'EOF';
 <option value="D">D</option>
 <option value="E">E</option>
 </select>
+項目：<input type="text" name="item" size="40">
 期限：<input type="text" name="limit_date" size="20">
 詳細：<input type="text" name="detail" size="40">
 <input type="submit" value="送信">
