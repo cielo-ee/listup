@@ -71,6 +71,7 @@ while (my $line = <$fh>){
 
 		$lastno = $consecutive + 1;
 		#テンプファイルに書き出し
+		$line = sprintf "$line\n";
 		print $tmpfh $line or die "Error Writing $tmpfile: $!";
 }
 print "</table>";
@@ -108,3 +109,4 @@ print <<'EOF';
 EOF
 
 print $q->end_html;
+
