@@ -35,7 +35,11 @@ print "<p>";
 print "今日は$year年$month月$mday日<br>";
 print "</p>";
 
-if( $q->param('state')){
+
+
+
+#追加
+if( $q->param('item')){
 		print "以下の内容を追加しました：";
 		print $q->param('state');
 		print "優先度"; 
@@ -52,6 +56,18 @@ if( $q->param('state')){
 }
 
 my @entries = &loadList($filename);
+
+#削除
+my @deleteItems = $q->param('deleteitem');
+if(@deleteItems){
+		@deleteItems = reverse(@deleteItems); #インデックスがずれないように後ろから削除する
+		foreach my $index(@deleteItems){
+				splice(@entries,$index-1,1);
+		}
+		saveList($filename,@entries);
+		print join(",",@deleteItems);
+		print "を削除しました\n";
+}
 
 
 print <<'EOS';
@@ -160,5 +176,32 @@ sub loadList
 		close $fh or die "Error closing $filename:$!";
 
 		return @entries;
+
+}
+
+
+sub saveList
+{
+		my ($filename,@entries) = @_;
+		my $tmpfile  = "tmp$$";
+		
+		open $fh, ">", $tmpfile or die "Cannot open $tmpfile: $!";
+
+		foreach my $entry(@entries){
+				my $line = join("\t",($entry->{itemno},
+									  $entry->{prior},
+									  $entry->{item},
+									  $entry->{add_date},
+									  $entry->{limit_date},
+									  $entry->{detail})
+								);
+				print $fh $line;
+				print $fh "\n";
+		}
+		close $fh or die "Error closing $tmpfile:$!";
+		
+		#ファイルの内容を書き戻す
+		File::Copy::move($tmpfile, $filename) or die "Cannot move $tmpfile to $filename";
+		
 
 }
